@@ -13,6 +13,8 @@ road_lo: BYTE -1
 road_hi: BYTE -1
 road_col: BYTE -1
 ground_col: BYTE -1
+p0_pix: BYTE -1
+p1_pix: BYTE -1
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -181,26 +183,36 @@ FrameLoop: SUBROUTINE
 	lda road_hi   ; +3  45
 	adc #$FF      ; +2  47
 	sta road_hi   ; +3  50
+	lda #0        ; +2  52
+	sta p0_pix    ; +3  55
+	sta p1_pix    ; +3  58
 
 /* Playfield control by masking foreground color */
 LineLoop:
 	sta WSYNC
-	;;;;;;;;;;;;;;;;;;;;;; line 0
+	;;;;;;;;;;;;;;;;;;;;;; line 0  (Draw P1, Write Playfield)
+	SUBROUTINE
 	sta HMOVE     ; +3  3
-	lda scanline  ; +3  6  XXXXXX
-	lda scanline  ; +3  9  XXXXXX
-	lda scanline  ; +3  12 XXXXXX
-	lda scanline  ; +3  15 XXXXXX
-	lda scanline  ; +3  18 XXXXXX
-	lda scanline  ; +3  21 XXXXXX
-	lda scanline  ; +3  24 XXXXXX
-	lda scanline  ; +3  27 XXXXXX
-	lda scanline  ; +3  30 XXXXXX
+	ldx p1_pix    ; +3  6
+	lda SpritePix,X ; +4 10
+	sta GRP1      ; +3  13
+	beq .skip_p1  ; +2/+3 15
+	lda SpriteCol,X ; +4 19
+	sta COLUP1    ; +3 22
+	inc p1_pix    ; +5 27
+	jmp .p1_done  ; +3 30
+.skip_p1            ; 16
+	lda scanline    ; +3  19 XXXXXX
+	lda scanline    ; +3  22 XXXXXX
+	lda scanline    ; +3  25 XXXXXX
+	lda scanline    ; +3  28 XXXXXX
+	nop             ; +2  30 XXXXXX
+.p1_done:
 	nop           ; +2  32 XXXXXX
 	lda ground_col; +3  35
 	sta COLUPF    ; +3  38 Start of active playfield
 
-	ldx road_seg  ; +3  41 Road pattern update
+	ldx road_seg  ; +3  41 Road pattern update...
 	lda Road0,X   ; +4  45 ...
 	sta PF2       ; +3  48 ...
 	lda Road1,X   ; +4  52 ...
@@ -213,7 +225,8 @@ LineLoop:
 	sta PF1       ; +3  73 ...
 	lda scanline  ; +3  76 XXXXXX
 
-	;;;;;;;;;;;;;;;;;;;;;; line 1
+	;;;;;;;;;;;;;;;;;;;;;; line 1  (NOOP, NOOP)
+	SUBROUTINE
 	sta HMOVE     ; +3  3
 	lda scanline  ; +3  6  XXXXXX
 	lda scanline  ; +3  9  XXXXXX
@@ -242,7 +255,116 @@ LineLoop:
 	nop           ; +2  74 XXXXXX
 	nop           ; +2  76 XXXXXX
 
-	;;;;;;;;;;;;;;;;;;;;;; line 2
+	;;;;;;;;;;;;;;;;;;;;;; line 2  (Draw P1, NOOP)
+	SUBROUTINE
+	sta HMOVE     ; +3  3
+	ldx p1_pix    ; +3  6
+	lda SpritePix,X ; +4 10
+	sta GRP1      ; +3  13
+	beq .skip_p1  ; +2/+3 15
+	lda SpriteCol,X ; +4 19
+	sta COLUP1    ; +3 22
+	inc p1_pix    ; +5 27
+	jmp .p1_done  ; +3 30
+.skip_p1            ; 16
+	lda scanline    ; +3  19 XXXXXX
+	lda scanline    ; +3  22 XXXXXX
+	lda scanline    ; +3  25 XXXXXX
+	lda scanline    ; +3  28 XXXXXX
+	nop             ; +2  30 XXXXXX
+.p1_done:
+	nop           ; +2  32 XXXXXX
+	lda ground_col; +3  35
+	sta COLUPF    ; +3  38
+	lda scanline  ; +3  41 XXXXXX
+	lda scanline  ; +3  44 XXXXXX
+	lda scanline  ; +3  47 XXXXXX
+	lda scanline  ; +3  50 XXXXXX
+	lda scanline  ; +3  53 XXXXXX
+	lda scanline  ; +3  56 XXXXXX
+	nop           ; +2  58 XXXXXX
+	nop           ; +2  60 XXXXXX
+	lda road_col  ; +3  63
+	sta COLUPF    ; +3  66
+	lda scanline  ; +3  69 XXXXXX
+	lda scanline  ; +3  72 XXXXXX
+	nop           ; +2  74 XXXXXX
+	nop           ; +2  76 XXXXXX
+
+	;;;;;;;;;;;;;;;;;;;;;; line 3  (NOOP, Plan Player)
+	SUBROUTINE
+	sta HMOVE     ; +3  3
+	lda scanline  ; +3  6  XXXXXX
+	lda scanline  ; +3  9  XXXXXX
+	lda scanline  ; +3  12 XXXXXX
+	lda scanline  ; +3  15 XXXXXX
+	lda scanline  ; +3  18 XXXXXX
+	lda scanline  ; +3  21 XXXXXX
+	lda scanline  ; +3  24 XXXXXX
+	lda scanline  ; +3  27 XXXXXX
+	lda scanline  ; +3  30 XXXXXX
+	nop           ; +2  32 XXXXXX
+	lda ground_col; +3  35
+	sta COLUPF    ; +3  38
+	lda scanline  ; +3  41 Check player position...
+	cmp #10       ; +2  43 ...
+	bne .p1_nomatch ; +2/+3 45
+	lda #1          ; +2  47
+	sta p1_pix      ; +3  50
+	jmp .p1_done    ; +3  53
+.p1_nomatch: ; 46
+	lda scanline    ; +3  49 XXXXXX
+	nop             ; +2  51 XXXXXX
+	nop             ; +2  53 XXXXXX
+.p1_done:
+	lda scanline  ; +3  56 XXXXXX
+	nop           ; +2  58 XXXXXX
+	nop           ; +2  60 XXXXXX
+	lda road_col  ; +3  63
+	sta COLUPF    ; +3  66
+	lda scanline  ; +3  69 XXXXXX
+	lda scanline  ; +3  72 XXXXXX
+	nop           ; +2  74 XXXXXX
+	nop           ; +2  76 XXXXXX
+
+	;;;;;;;;;;;;;;;;;;;;;; line 4  (Draw P1, NOOP)
+	SUBROUTINE
+	sta HMOVE     ; +3  3
+	ldx p1_pix    ; +3  6
+	lda SpritePix,X ; +4 10
+	sta GRP1      ; +3  13
+	beq .skip_p1  ; +2/+3 15
+	lda SpriteCol,X ; +4 19
+	sta COLUP1    ; +3 22
+	inc p1_pix    ; +5 27
+	jmp .p1_done  ; +3 30
+.skip_p1            ; 16
+	lda scanline    ; +3  19 XXXXXX
+	lda scanline    ; +3  22 XXXXXX
+	lda scanline    ; +3  25 XXXXXX
+	lda scanline    ; +3  28 XXXXXX
+	nop             ; +2  30 XXXXXX
+.p1_done:
+	nop           ; +2  32 XXXXXX
+	lda ground_col; +3  35
+	sta COLUPF    ; +3  38
+	lda scanline  ; +3  41 XXXXXX
+	lda scanline  ; +3  44 XXXXXX
+	lda scanline  ; +3  47 XXXXXX
+	lda scanline  ; +3  50 XXXXXX
+	lda scanline  ; +3  53 XXXXXX
+	lda scanline  ; +3  56 XXXXXX
+	nop           ; +2  58 XXXXXX
+	nop           ; +2  60 XXXXXX
+	lda road_col  ; +3  63
+	sta COLUPF    ; +3  66
+	lda scanline  ; +3  69 XXXXXX
+	lda scanline  ; +3  72 XXXXXX
+	nop           ; +2  74 XXXXXX
+	nop           ; +2  76 XXXXXX
+
+	;;;;;;;;;;;;;;;;;;;;;; line 5  (NOOP, NOOP)
+	SUBROUTINE
 	sta HMOVE     ; +3  3
 	lda scanline  ; +3  6  XXXXXX
 	lda scanline  ; +3  9  XXXXXX
@@ -271,17 +393,24 @@ LineLoop:
 	nop           ; +2  74 XXXXXX
 	nop           ; +2  76 XXXXXX
 
-	;;;;;;;;;;;;;;;;;;;;;; line 3
+	;;;;;;;;;;;;;;;;;;;;;; line 6  (Draw P1, NOOP)
+	SUBROUTINE
 	sta HMOVE     ; +3  3
-	lda scanline  ; +3  6  XXXXXX
-	lda scanline  ; +3  9  XXXXXX
-	lda scanline  ; +3  12 XXXXXX
-	lda scanline  ; +3  15 XXXXXX
-	lda scanline  ; +3  18 XXXXXX
-	lda scanline  ; +3  21 XXXXXX
-	lda scanline  ; +3  24 XXXXXX
-	lda scanline  ; +3  27 XXXXXX
-	lda scanline  ; +3  30 XXXXXX
+	ldx p1_pix    ; +3  6
+	lda SpritePix,X ; +4 10
+	sta GRP1      ; +3  13
+	beq .skip_p1  ; +2/+3 15
+	lda SpriteCol,X ; +4 19
+	sta COLUP1    ; +3 22
+	inc p1_pix    ; +5 27
+	jmp .p1_done  ; +3 30
+.skip_p1            ; 16
+	lda scanline    ; +3  19 XXXXXX
+	lda scanline    ; +3  22 XXXXXX
+	lda scanline    ; +3  25 XXXXXX
+	lda scanline    ; +3  28 XXXXXX
+	nop             ; +2  30 XXXXXX
+.p1_done:
 	nop           ; +2  32 XXXXXX
 	lda ground_col; +3  35
 	sta COLUPF    ; +3  38
@@ -300,94 +429,8 @@ LineLoop:
 	nop           ; +2  74 XXXXXX
 	nop           ; +2  76 XXXXXX
 
-	;;;;;;;;;;;;;;;;;;;;;; line 4
-	sta HMOVE     ; +3  3
-	lda scanline  ; +3  6  XXXXXX
-	lda scanline  ; +3  9  XXXXXX
-	lda scanline  ; +3  12 XXXXXX
-	lda scanline  ; +3  15 XXXXXX
-	lda scanline  ; +3  18 XXXXXX
-	lda scanline  ; +3  21 XXXXXX
-	lda scanline  ; +3  24 XXXXXX
-	lda scanline  ; +3  27 XXXXXX
-	lda scanline  ; +3  30 XXXXXX
-	nop           ; +2  32 XXXXXX
-	lda ground_col; +3  35
-	sta COLUPF    ; +3  38
-	lda scanline  ; +3  41 XXXXXX
-	lda scanline  ; +3  44 XXXXXX
-	lda scanline  ; +3  47 XXXXXX
-	lda scanline  ; +3  50 XXXXXX
-	lda scanline  ; +3  53 XXXXXX
-	lda scanline  ; +3  56 XXXXXX
-	nop           ; +2  58 XXXXXX
-	nop           ; +2  60 XXXXXX
-	lda road_col  ; +3  63
-	sta COLUPF    ; +3  66
-	lda scanline  ; +3  69 XXXXXX
-	lda scanline  ; +3  72 XXXXXX
-	nop           ; +2  74 XXXXXX
-	nop           ; +2  76 XXXXXX
-
-	;;;;;;;;;;;;;;;;;;;;;; line 5
-	sta HMOVE     ; +3  3
-	lda scanline  ; +3  6  XXXXXX
-	lda scanline  ; +3  9  XXXXXX
-	lda scanline  ; +3  12 XXXXXX
-	lda scanline  ; +3  15 XXXXXX
-	lda scanline  ; +3  18 XXXXXX
-	lda scanline  ; +3  21 XXXXXX
-	lda scanline  ; +3  24 XXXXXX
-	lda scanline  ; +3  27 XXXXXX
-	lda scanline  ; +3  30 XXXXXX
-	nop           ; +2  32 XXXXXX
-	lda ground_col; +3  35
-	sta COLUPF    ; +3  38
-	lda scanline  ; +3  41 XXXXXX
-	lda scanline  ; +3  44 XXXXXX
-	lda scanline  ; +3  47 XXXXXX
-	lda scanline  ; +3  50 XXXXXX
-	lda scanline  ; +3  53 XXXXXX
-	lda scanline  ; +3  56 XXXXXX
-	nop           ; +2  58 XXXXXX
-	nop           ; +2  60 XXXXXX
-	lda road_col  ; +3  63
-	sta COLUPF    ; +3  66
-	lda scanline  ; +3  69 XXXXXX
-	lda scanline  ; +3  72 XXXXXX
-	nop           ; +2  74 XXXXXX
-	nop           ; +2  76 XXXXXX
-
-	;;;;;;;;;;;;;;;;;;;;;; line 6
-	sta HMOVE     ; +3  3
-	lda scanline  ; +3  6  XXXXXX
-	lda scanline  ; +3  9  XXXXXX
-	lda scanline  ; +3  12 XXXXXX
-	lda scanline  ; +3  15 XXXXXX
-	lda scanline  ; +3  18 XXXXXX
-	lda scanline  ; +3  21 XXXXXX
-	lda scanline  ; +3  24 XXXXXX
-	lda scanline  ; +3  27 XXXXXX
-	lda scanline  ; +3  30 XXXXXX
-	nop           ; +2  32 XXXXXX
-	lda ground_col; +3  35
-	sta COLUPF    ; +3  38
-	lda scanline  ; +3  41 XXXXXX
-	lda scanline  ; +3  44 XXXXXX
-	lda scanline  ; +3  47 XXXXXX
-	lda scanline  ; +3  50 XXXXXX
-	lda scanline  ; +3  53 XXXXXX
-	lda scanline  ; +3  56 XXXXXX
-	nop           ; +2  58 XXXXXX
-	nop           ; +2  60 XXXXXX
-	lda road_col  ; +3  63
-	sta COLUPF    ; +3  66
-	lda scanline  ; +3  69 XXXXXX
-	lda scanline  ; +3  72 XXXXXX
-	nop           ; +2  74 XXXXXX
-	nop           ; +2  76 XXXXXX
-
-	;;;;;;;;;;;;;;;;;;;;;; line 7
+	;;;;;;;;;;;;;;;;;;;;;; line 7  (NOOP, Road state update)
+	SUBROUTINE
 	sta HMOVE     ; +3  3
 	lda scanline  ; +3  6  XXXXXX
 	lda scanline  ; +3  9  XXXXXX
@@ -529,6 +572,47 @@ Road2:
 	BYTE  %00000010
 	BYTE  %00000010
 
+	org $F700
+SpritePix:
+	BYTE 0
+	BYTE %01111110
+	BYTE %11111111
+	BYTE %11111111
+	BYTE %11111111
+	BYTE %11000011
+	BYTE %10000001
+	BYTE %10111101
+	BYTE %11111111
+	BYTE %11111111
+	BYTE %11111111
+	BYTE %11000011
+	BYTE %11011011
+	BYTE %11011011
+	BYTE %01011010
+	BYTE %01111110
+	BYTE %01000010
+	BYTE 0
+
+	org $F800
+SpriteCol:
+	BYTE 0
+	BYTE $0F
+	BYTE $0F
+	BYTE $0F
+	BYTE $0F
+	BYTE $0F
+	BYTE $0F
+	BYTE $0F
+	BYTE $0F
+	BYTE $0F
+	BYTE $0F
+	BYTE $0F
+	BYTE $0F
+	BYTE $0F
+	BYTE $0F
+	BYTE $0F
+	BYTE $44
+	BYTE 0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; Reset and Interrupt vectors
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
