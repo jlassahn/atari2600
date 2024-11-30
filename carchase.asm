@@ -187,8 +187,16 @@ FrameLoop: SUBROUTINE
 	lda #0        ; +2  52
 	sta p0_pix    ; +3  55
 	sta p1_pix    ; +3  58
+	jmp LineLoop
 
-/* Playfield control by masking foreground color */
+; The main display code is a loop that runs in batches of eight scanlines
+; These are divided into two groups of four, with each group aligned to
+; be inside it's own ROM page.  This guarantees that local branches in a
+; scanline don't cross page boundaries.
+; Scanline code is exactly 76 clocks per line, so no WSYNC is needed between
+; lines, except at the beginning of the loop.
+
+	ALIGN 256, $FF
 LineLoop:
 	sta WSYNC
 	;;;;;;;;;;;;;;;;;;;;;; line 0  (Draw P1, Write Playfield)
@@ -336,10 +344,12 @@ LineLoop:
 	lda road_col  ; +3  63
 	sta COLUPF    ; +3  66
 	lda scanline  ; +3  69 XXXXXX
-	lda scanline  ; +3  72 XXXXXX
-	nop           ; +2  74 XXXXXX
-	nop           ; +2  76 XXXXXX
+	nop           ; +2  71 XXXXXX
+	nop           ; +2  73 XXXXXX
+	jmp Line4     ; +3  76
 
+	ALIGN 256, $FF
+Line4:
 	;;;;;;;;;;;;;;;;;;;;;; line 4  (Draw P1, FAKE Plan P0)
 	SUBROUTINE
 	sta HMOVE     ; +3  3
