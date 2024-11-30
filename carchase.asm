@@ -225,18 +225,24 @@ LineLoop:
 	sta PF1       ; +3  73 ...
 	lda scanline  ; +3  76 XXXXXX
 
-	;;;;;;;;;;;;;;;;;;;;;; line 1  (NOOP, NOOP)
+	;;;;;;;;;;;;;;;;;;;;;; line 1  (Draw P0, NOOP)
 	SUBROUTINE
 	sta HMOVE     ; +3  3
-	lda scanline  ; +3  6  XXXXXX
-	lda scanline  ; +3  9  XXXXXX
-	lda scanline  ; +3  12 XXXXXX
-	lda scanline  ; +3  15 XXXXXX
-	lda scanline  ; +3  18 XXXXXX
-	lda scanline  ; +3  21 XXXXXX
-	lda scanline  ; +3  24 XXXXXX
-	lda scanline  ; +3  27 XXXXXX
-	lda scanline  ; +3  30 XXXXXX
+	ldx p0_pix    ; +3  6
+	lda SpritePix,X ; +4 10
+	sta GRP0      ; +3  13
+	beq .skip_p0  ; +2/+3 15
+	lda SpriteCol,X ; +4 19
+	sta COLUP0    ; +3 22
+	inc p0_pix    ; +5 27
+	jmp .p0_done  ; +3 30
+.skip_p0            ; 16
+	lda scanline    ; +3  19 XXXXXX
+	lda scanline    ; +3  22 XXXXXX
+	lda scanline    ; +3  25 XXXXXX
+	lda scanline    ; +3  28 XXXXXX
+	nop             ; +2  30 XXXXXX
+.p0_done:
 	nop           ; +2  32 XXXXXX
 	lda ground_col; +3  35
 	sta COLUPF    ; +3  38
@@ -291,18 +297,24 @@ LineLoop:
 	nop           ; +2  74 XXXXXX
 	nop           ; +2  76 XXXXXX
 
-	;;;;;;;;;;;;;;;;;;;;;; line 3  (NOOP, Plan Player)
+	;;;;;;;;;;;;;;;;;;;;;; line 3  (Draw P0, Plan Player)
 	SUBROUTINE
 	sta HMOVE     ; +3  3
-	lda scanline  ; +3  6  XXXXXX
-	lda scanline  ; +3  9  XXXXXX
-	lda scanline  ; +3  12 XXXXXX
-	lda scanline  ; +3  15 XXXXXX
-	lda scanline  ; +3  18 XXXXXX
-	lda scanline  ; +3  21 XXXXXX
-	lda scanline  ; +3  24 XXXXXX
-	lda scanline  ; +3  27 XXXXXX
-	lda scanline  ; +3  30 XXXXXX
+	ldx p0_pix    ; +3  6
+	lda SpritePix,X ; +4 10
+	sta GRP0      ; +3  13
+	beq .skip_p0  ; +2/+3 15
+	lda SpriteCol,X ; +4 19
+	sta COLUP0    ; +3 22
+	inc p0_pix    ; +5 27
+	jmp .p0_done  ; +3 30
+.skip_p0            ; 16
+	lda scanline    ; +3  19 XXXXXX
+	lda scanline    ; +3  22 XXXXXX
+	lda scanline    ; +3  25 XXXXXX
+	lda scanline    ; +3  28 XXXXXX
+	nop             ; +2  30 XXXXXX
+.p0_done:
 	nop           ; +2  32 XXXXXX
 	lda ground_col; +3  35
 	sta COLUPF    ; +3  38
@@ -327,7 +339,7 @@ LineLoop:
 	nop           ; +2  74 XXXXXX
 	nop           ; +2  76 XXXXXX
 
-	;;;;;;;;;;;;;;;;;;;;;; line 4  (Draw P1, NOOP)
+	;;;;;;;;;;;;;;;;;;;;;; line 4  (Draw P1, FAKE Plan P0)
 	SUBROUTINE
 	sta HMOVE     ; +3  3
 	ldx p1_pix    ; +3  6
@@ -348,11 +360,17 @@ LineLoop:
 	nop           ; +2  32 XXXXXX
 	lda ground_col; +3  35
 	sta COLUPF    ; +3  38
-	lda scanline  ; +3  41 XXXXXX
-	lda scanline  ; +3  44 XXXXXX
-	lda scanline  ; +3  47 XXXXXX
-	lda scanline  ; +3  50 XXXXXX
-	lda scanline  ; +3  53 XXXXXX
+	lda scanline  ; +3  41 FAKE check opponent position...
+	cmp #28       ; +2  43 ...
+	bne .p0_nomatch ; +2/+3 45
+	lda #18         ; +2  47   FAKE choose different sprite
+	sta p0_pix      ; +3  50
+	jmp .p0_done    ; +3  53
+.p0_nomatch: ; 46
+	lda scanline    ; +3  49 XXXXXX
+	nop             ; +2  51 XXXXXX
+	nop             ; +2  53 XXXXXX
+.p0_done:
 	lda scanline  ; +3  56 XXXXXX
 	nop           ; +2  58 XXXXXX
 	nop           ; +2  60 XXXXXX
@@ -363,18 +381,24 @@ LineLoop:
 	nop           ; +2  74 XXXXXX
 	nop           ; +2  76 XXXXXX
 
-	;;;;;;;;;;;;;;;;;;;;;; line 5  (NOOP, NOOP)
+	;;;;;;;;;;;;;;;;;;;;;; line 5  (Draw P0, NOOP)
 	SUBROUTINE
 	sta HMOVE     ; +3  3
-	lda scanline  ; +3  6  XXXXXX
-	lda scanline  ; +3  9  XXXXXX
-	lda scanline  ; +3  12 XXXXXX
-	lda scanline  ; +3  15 XXXXXX
-	lda scanline  ; +3  18 XXXXXX
-	lda scanline  ; +3  21 XXXXXX
-	lda scanline  ; +3  24 XXXXXX
-	lda scanline  ; +3  27 XXXXXX
-	lda scanline  ; +3  30 XXXXXX
+	ldx p0_pix    ; +3  6
+	lda SpritePix,X ; +4 10
+	sta GRP0      ; +3  13
+	beq .skip_p0  ; +2/+3 15
+	lda SpriteCol,X ; +4 19
+	sta COLUP0    ; +3 22
+	inc p0_pix    ; +5 27
+	jmp .p0_done  ; +3 30
+.skip_p0            ; 16
+	lda scanline    ; +3  19 XXXXXX
+	lda scanline    ; +3  22 XXXXXX
+	lda scanline    ; +3  25 XXXXXX
+	lda scanline    ; +3  28 XXXXXX
+	nop             ; +2  30 XXXXXX
+.p0_done:
 	nop           ; +2  32 XXXXXX
 	lda ground_col; +3  35
 	sta COLUPF    ; +3  38
@@ -429,18 +453,24 @@ LineLoop:
 	nop           ; +2  74 XXXXXX
 	nop           ; +2  76 XXXXXX
 
-	;;;;;;;;;;;;;;;;;;;;;; line 7  (NOOP, Road state update)
+	;;;;;;;;;;;;;;;;;;;;;; line 7  (Draw P0, Road state update)
 	SUBROUTINE
 	sta HMOVE     ; +3  3
-	lda scanline  ; +3  6  XXXXXX
-	lda scanline  ; +3  9  XXXXXX
-	lda scanline  ; +3  12 XXXXXX
-	lda scanline  ; +3  15 XXXXXX
-	lda scanline  ; +3  18 XXXXXX
-	lda scanline  ; +3  21 XXXXXX
-	lda scanline  ; +3  24 XXXXXX
-	lda scanline  ; +3  27 XXXXXX
-	lda scanline  ; +3  30 XXXXXX
+	ldx p0_pix    ; +3  6
+	lda SpritePix,X ; +4 10
+	sta GRP0      ; +3  13
+	beq .skip_p0  ; +2/+3 15
+	lda SpriteCol,X ; +4 19
+	sta COLUP0    ; +3 22
+	inc p0_pix    ; +5 27
+	jmp .p0_done  ; +3 30
+.skip_p0            ; 16
+	lda scanline    ; +3  19 XXXXXX
+	lda scanline    ; +3  22 XXXXXX
+	lda scanline    ; +3  25 XXXXXX
+	lda scanline    ; +3  28 XXXXXX
+	nop             ; +2  30 XXXXXX
+.p0_done:
 	nop           ; +2  32 XXXXXX
 	lda ground_col; +3  35
 	sta COLUPF    ; +3  38 Start of active playfield
@@ -572,6 +602,7 @@ Road2:
 	BYTE  %00000010
 	BYTE  %00000010
 
+; FIXME need a better way to generate symbols for sprite offsets
 	org $F700
 SpritePix:
 	BYTE 0
@@ -592,6 +623,36 @@ SpritePix:
 	BYTE %01111110
 	BYTE %01000010
 	BYTE 0
+	BYTE %11011011
+	BYTE %11111111
+	BYTE %11100111
+	BYTE %11111111
+	BYTE %10000001
+	BYTE %00111100
+	BYTE %01111110
+	BYTE %01111110
+	BYTE %00111100
+	BYTE %10000001
+	BYTE %11100111
+	BYTE %11111111
+	BYTE %01111110
+	BYTE %11011011
+	BYTE %11111111 ;;;;;;;;
+	BYTE %01111110
+	BYTE %01111110
+	BYTE %01111110
+	BYTE %01111110
+	BYTE %01111110
+	BYTE %01000010
+	BYTE %00011000
+	BYTE %01111110
+	BYTE %01111110
+	BYTE %01000010
+	BYTE %01111110
+	BYTE %01111110
+	BYTE %01111110
+	BYTE %01100110
+	BYTE %11111111 ;;;;;;;;
 
 	org $F800
 SpriteCol:
@@ -612,6 +673,36 @@ SpriteCol:
 	BYTE $0F
 	BYTE $0F
 	BYTE $44
+	BYTE 0
+	BYTE $70
+	BYTE $72
+	BYTE $72
+	BYTE $72
+	BYTE $72
+	BYTE $92
+	BYTE $92
+	BYTE $92
+	BYTE $92
+	BYTE $72
+	BYTE $72
+	BYTE $72
+	BYTE $72
+	BYTE $04
+	BYTE 0
+	BYTE $92
+	BYTE $92
+	BYTE $92
+	BYTE $92
+	BYTE $92
+	BYTE $92
+	BYTE $72
+	BYTE $72
+	BYTE $72
+	BYTE $72
+	BYTE $92
+	BYTE $92
+	BYTE $92
+	BYTE $94
 	BYTE 0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; Reset and Interrupt vectors
