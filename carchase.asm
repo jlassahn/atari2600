@@ -52,7 +52,7 @@ Init: SUBROUTINE
 	lda #0
 	sta COLUBK
 	sta road_col
-	lda #80
+	lda #$D2
 	sta ground_col
 	lda Road0
 	sta PF2
@@ -127,7 +127,8 @@ FrameLoop: SUBROUTINE
 
 	; vblank 19
 	sta  WSYNC
-	lda #$70 ;+2
+	;; lda #$70 ;+2
+	lda #$00 ;+2
 	sta HMP0 ;+3
 	sta HMP1 ;+3
 	lda 0 ;+3
@@ -566,144 +567,9 @@ LineLoop:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; Data Tables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	org $F400
-Road0:
-	BYTE  %00000000  ; mirrored
-	BYTE  %00000001  ; mirrored
-	BYTE  %00000011  ; mirrored
-	BYTE  %00000111  ; mirrored
-	BYTE  %00001111  ; mirrored
-	BYTE  %00011111  ; mirrored
-	BYTE  %00111111  ; mirrored
-	BYTE  %01111111  ; mirrored
-	BYTE  %11111111  ; mirrored
+	include car_road.asm
+	include car_sprites.asm
 
-	org $F500
-Road1:
-	BYTE  %10000000  ; mirrored, upper nybble only
-	BYTE  %10000000  ; mirrored, upper nybble only
-	BYTE  %10000000  ; mirrored, upper nybble only
-	BYTE  %10000000  ; mirrored, upper nybble only
-	BYTE  %10000000  ; mirrored, upper nybble only
-	BYTE  %10000000  ; mirrored, upper nybble only
-	BYTE  %10000000  ; mirrored, upper nybble only
-	BYTE  %10000000  ; mirrored, upper nybble only
-	BYTE  %10000000  ; mirrored, upper nybble only
-
-	org $F600
-Road2:
-	BYTE  %00000010
-	BYTE  %00000010
-	BYTE  %00000010
-	BYTE  %00000010
-	BYTE  %00000010
-	BYTE  %00000010
-	BYTE  %00000010
-	BYTE  %00000010
-	BYTE  %00000010
-
-; FIXME need a better way to generate symbols for sprite offsets
-	org $F700
-SpritePix:
-	BYTE 0
-	BYTE %01111110
-	BYTE %11111111
-	BYTE %11111111
-	BYTE %11111111
-	BYTE %11000011
-	BYTE %10000001
-	BYTE %10111101
-	BYTE %11111111
-	BYTE %11111111
-	BYTE %11111111
-	BYTE %11000011
-	BYTE %11011011
-	BYTE %11011011
-	BYTE %01011010
-	BYTE %01111110
-	BYTE %01000010
-	BYTE 0
-	BYTE %11011011
-	BYTE %11111111
-	BYTE %11100111
-	BYTE %11111111
-	BYTE %10000001
-	BYTE %00111100
-	BYTE %01111110
-	BYTE %01111110
-	BYTE %00111100
-	BYTE %10000001
-	BYTE %11100111
-	BYTE %11111111
-	BYTE %01111110
-	BYTE %11011011
-	BYTE %11111111 ;;;;;;;;
-	BYTE %01111110
-	BYTE %01111110
-	BYTE %01111110
-	BYTE %01111110
-	BYTE %01111110
-	BYTE %01000010
-	BYTE %00011000
-	BYTE %01111110
-	BYTE %01111110
-	BYTE %01000010
-	BYTE %01111110
-	BYTE %01111110
-	BYTE %01111110
-	BYTE %01100110
-	BYTE %11111111 ;;;;;;;;
-
-	org $F800
-SpriteCol:
-	BYTE 0
-	BYTE $0F
-	BYTE $0F
-	BYTE $0F
-	BYTE $0F
-	BYTE $0F
-	BYTE $0F
-	BYTE $0F
-	BYTE $0F
-	BYTE $0F
-	BYTE $0F
-	BYTE $0F
-	BYTE $0F
-	BYTE $0F
-	BYTE $0F
-	BYTE $0F
-	BYTE $44
-	BYTE 0
-	BYTE $70
-	BYTE $72
-	BYTE $72
-	BYTE $72
-	BYTE $72
-	BYTE $92
-	BYTE $92
-	BYTE $92
-	BYTE $92
-	BYTE $72
-	BYTE $72
-	BYTE $72
-	BYTE $72
-	BYTE $04
-	BYTE 0
-	BYTE $92
-	BYTE $92
-	BYTE $92
-	BYTE $92
-	BYTE $92
-	BYTE $92
-	BYTE $72
-	BYTE $72
-	BYTE $72
-	BYTE $72
-	BYTE $92
-	BYTE $92
-	BYTE $92
-	BYTE $94
-	BYTE 0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; Reset and Interrupt vectors
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
