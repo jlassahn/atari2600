@@ -15,6 +15,10 @@ road_col: BYTE -1
 ground_col: BYTE -1
 p0_pix: BYTE -1
 p1_pix: BYTE -1
+
+player_seg: BYTE -1
+player_move: ds.b 15
+player_pix: ds.b 15
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -63,6 +67,28 @@ Init: SUBROUTINE
 	lda #0
 	sta road_lo
 	sta road_hi
+
+	lda #69
+	sta player_pix+1 ; smoke
+	sta player_pix+2 ; smoke
+	lda #60
+	sta player_pix+3 ; smoke
+	lda #9
+	sta player_pix+4 ; player
+	lda #1
+	sta player_pix+5 ; player
+	lda #48
+	sta player_pix+6 ; bullet
+	lda #54
+	sta player_pix+7 ; bullet
+	sta player_pix+8 ; bullet
+
+	lda #$07
+	sta player_move+1 ; smoke
+	lda #$67
+	sta player_move+2 ; smoke
+	lda #$77
+	sta player_move+3 ; smoke
 
 FrameLoop: SUBROUTINE
 	; vblank 1
@@ -211,10 +237,12 @@ LineLoop:
 	inc p1_pix         ; A +5 27
 	jmp .p1_done       ; A +3 30
 .skip_p1               ; B +3  16
-	lda scanline       ; B +3  19 XXXXXX
-	lda scanline       ; B +3  22 XXXXXX
-	lda scanline       ; B +3  25 XXXXXX
-	lda scanline       ; B +3  28 XXXXXX
+	nop                ; B +2  18 XXXXXX
+	nop                ; B +2  20 XXXXXX
+	nop                ; B +2  22 XXXXXX
+	nop                ; B +2  24 XXXXXX
+	nop                ; B +2  26 XXXXXX
+	nop                ; B +2  28 XXXXXX
 	nop                ; B +2  30 XXXXXX
 .p1_done:
 	nop                ; +2  32 XXXXXX
@@ -246,27 +274,33 @@ LineLoop:
 	inc p0_pix         ; A +5 27
 	jmp .p0_done       ; A +3 30
 .skip_p0               ; B +3 16
-	lda scanline       ; B +3  19 XXXXXX
-	lda scanline       ; B +3  22 XXXXXX
-	lda scanline       ; B +3  25 XXXXXX
-	lda scanline       ; B +3  28 XXXXXX
-	nop                ; B +2  30 XXXXXX
+	nop                ; B +2 18 XXXXXX
+	nop                ; B +2 20 XXXXXX
+	nop                ; B +2 22 XXXXXX
+	nop                ; B +2 24 XXXXXX
+	nop                ; B +2 26 XXXXXX
+	nop                ; B +2 28 XXXXXX
+	nop                ; B +2 30 XXXXXX
 .p0_done:
 	nop                ; +2  32 XXXXXX
 	lda ground_col     ; +3  35
 	sta COLUPF         ; +3  38
-	lda scanline       ; +3  41 XXXXXX
-	lda scanline       ; +3  44 XXXXXX
-	lda scanline       ; +3  47 XXXXXX
-	lda scanline       ; +3  50 XXXXXX
-	lda scanline       ; +3  53 XXXXXX
-	lda scanline       ; +3  56 XXXXXX
+	nop                ; +2  40 XXXXXX
+	nop                ; +2  42 XXXXXX
+	nop                ; +2  44 XXXXXX
+	nop                ; +2  46 XXXXXX
+	nop                ; +2  48 XXXXXX
+	nop                ; +2  50 XXXXXX
+	nop                ; +2  52 XXXXXX
+	nop                ; +2  54 XXXXXX
+	nop                ; +2  56 XXXXXX
 	nop                ; +2  58 XXXXXX
 	nop                ; +2  60 XXXXXX
 	lda road_col       ; +3  63
 	sta COLUPF         ; +3  66
-	lda scanline       ; +3  69 XXXXXX
-	lda scanline       ; +3  72 XXXXXX
+	nop                ; +2  68 XXXXXX
+	nop                ; +2  70 XXXXXX
+	nop                ; +2  72 XXXXXX
 	nop                ; +2  74 XXXXXX
 	nop                ; +2  76 XXXXXX
 
@@ -324,30 +358,34 @@ LineLoop:
 	lda scanline       ; +3  28 XXXXXX
 	nop                ; +2  30 XXXXXX
 .p0_done:
-	nop                ; +2  32 XXXXXX
-	lda ground_col     ; +3  35
-	sta COLUPF         ; +3  38
-	lda scanline       ; +3  41 Check player position...
-	cmp #10            ; +2  43 ...
-	bne .p1_nomatch    ; +2/+3 45
-	lda #1             ; +2  47
-	sta p1_pix         ; +3  50
-	jmp .p1_done       ; +3  53
-.p1_nomatch: ; 46
-	lda scanline       ; +3  49 XXXXXX
-	nop                ; +2  51 XXXXXX
-	nop                ; +2  53 XXXXXX
-.p1_done:
-	lda scanline       ; +3  56 XXXXXX
-	nop                ; +2  58 XXXXXX
-	nop                ; +2  60 XXXXXX
-	lda road_col       ; +3  63
-	sta COLUPF         ; +3  66
-	lda scanline       ; +3  69 XXXXXX
-	nop                ; +2  71 XXXXXX
-	nop                ; +2  73 XXXXXX
-	jmp Line4          ; +3  76
-
+	lda #1             ; +2  32
+	ldx ground_col     ; +3  35
+	stx COLUPF         ; +3  38
+	ldx player_seg     ; +3  41
+	bit scanline       ; +3  44
+	bne .player_skip   ; A +2 46 /B +3 47
+	ldy player_move,X  ; A +4 50
+	sty HMP1           ; A +3 53
+	lda player_pix,X   ; A +4 57
+	sta p1_pix         ; A +4 60
+	lda road_col       ; A +3 63
+	sta COLUPF         ; A +3 66
+	sty NUSIZ1         ; A +3 69
+	nop                ; A +2 71 XXXXXX
+	nop                ; A +2 73 XXXXXX
+	jmp Line4          ; A +3 76
+.player_skip           ; B +3 47
+	lda scanline       ; B +3 50
+	lsr                ; B +2 52
+	sta player_seg     ; B +3 55
+	nop                ; B +2 57 XXXXXX
+	lda scanline       ; B +3 60 XXXXXX
+	ldy road_col       ; B +3 63
+	sty COLUPF         ; B +3 66
+	lda scanline       ; B +3 69
+	nop                ; B +2 71 XXXXXX
+	nop                ; B +2 73 XXXXXX
+	jmp Line4          ; B +3 76
 	ALIGN 256, $FF
 Line4:
 	;;;;;;;;;;;;;;;;;;;;;; line 4  (Draw P1, FAKE Plan P0)
@@ -387,9 +425,9 @@ Line4:
 	nop                ; +2  60 XXXXXX
 	lda road_col       ; +3  63
 	sta COLUPF         ; +3  66
-	lda scanline       ; +3  69 XXXXXX
-	lda scanline       ; +3  72 XXXXXX
-	nop                ; +2  74 XXXXXX
+	lda #0             ; +2  68
+	sta HMP1           ; +3  71 Clear P1 move set in Line3
+	lda scanline       ; +3  74 XXXXXX
 	nop                ; +2  76 XXXXXX
 
 	;;;;;;;;;;;;;;;;;;;;;; line 5  (Draw P0, NOOP)
