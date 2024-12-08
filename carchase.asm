@@ -15,7 +15,11 @@ road_col: BYTE -1
 ground_col: BYTE -1
 p0_pix: BYTE -1
 p1_pix: BYTE -1
+p0_x: BYTE -1
+p1_x: BYTE -1
 
+opp_line: BYTE -1
+opp_pix: BYTE -1
 player_seg: BYTE -1
 player_move: ds.b 15
 player_pix: ds.b 15
@@ -90,11 +94,45 @@ Init: SUBROUTINE
 	lda #$77
 	sta player_move+3 ; smoke
 
+	lda #12
+	sta opp_line
+	lda #18
+	sta opp_pix
+	lda #0
+	sta p0_x
+	sta p1_x
+
+
 FrameLoop: SUBROUTINE
 	; vblank 1
 	sta  WSYNC
 	lda  #2
 	sta  VBLANK
+
+	; FAKE read inputs
+	; lda INPT4 ; LEFT joy button, $80 means not pressed, $00 means pressed
+	; lda INPT5 ; RIGHT joy button, $80 means not pressed, $00 means pressed
+	lda SWCHA
+	rol
+	bcs .no_right
+	inc p1_x
+	inc p1_x
+.no_right:
+	rol
+	bcs .no_left
+	dec p1_x
+	dec p1_x
+.no_left:
+	rol
+	bcs .no_down
+
+.no_down:
+	rol
+	bcs .no_up
+
+.no_up:
+	nop
+
 
 	; vblank 2
 	sta  WSYNC
@@ -112,11 +150,11 @@ FrameLoop: SUBROUTINE
 
 	; vblank 6 vsync 3
 	sta  WSYNC
-	lda #0
-	sta  VSYNC
 
 	; vblank 7
 	sta  WSYNC
+	lda #0
+	sta  VSYNC
 
 	; vblank 8
 	sta  WSYNC
@@ -148,11 +186,61 @@ FrameLoop: SUBROUTINE
 	; vblank 17
 	sta  WSYNC
 
+	; some ideas here borrowed from
+	; https://bumbershootsoft.wordpress.com/2018/08/30/an-arbitrary-sprite-positioning-routine-for-the-atari-2600/
+	; x == 0 --> strobe at clock 37 --> left edge at pixel 48
+
 	; vblank 18
 	sta  WSYNC
+	lda p1_x           ; +3  7
+	clc                ; +2  2
+	adc #6             ; +2  4  Offset to zero out position
+	sec                ; +2  9
+	nop                ; +2  11 XXXXXX
+	nop                ; +2  13 XXXXXX
+	nop                ; +2  15 XXXXXX
+	nop                ; +2  17 XXXXXX
+p1_strobe_loop:
+	sbc #15            ; +2  19 + N*5   0 <= N <= 4
+	bcs p1_strobe_loop ; +2  21 + N*5
+	eor #7             ; +2  23 + N*5   A = (-A - 1) + 8
+	asl                ; +2  25 + N*5
+	asl                ; +2  27 + N*5
+	asl                ; +2  29 + N*5
+	asl                ; +2  31 + N*5
+	sta HMP1           ; +3  34 + N*5
+	sta RESP1          ; +3  37 + N*5 <= 57
 
 	; vblank 19
 	sta  WSYNC
+	lda p0_x           ; +3  7
+	clc                ; +2  2
+	adc #6             ; +2  4  Offset to zero out position
+	sec                ; +2  9
+	nop                ; +2  11 XXXXXX
+	nop                ; +2  13 XXXXXX
+	nop                ; +2  15 XXXXXX
+	nop                ; +2  17 XXXXXX
+p0_strobe_loop:
+	sbc #15            ; +2  19 + N*5   0 <= N <= 4
+	bcs p0_strobe_loop ; +2  21 + N*5
+	eor #7             ; +2  23 + N*5   A = (-A - 1) + 8
+	asl                ; +2  25 + N*5
+	asl                ; +2  27 + N*5
+	asl                ; +2  29 + N*5
+	asl                ; +2  31 + N*5
+	sta HMP0           ; +3  34 + N*5
+	sta RESP0          ; +3  37 + N*5 <= 57
+
+	; FAKE move player 0 around
+	lda p0_x           ; <= 60
+	clc                ; <= 62
+	adc #1             ; <= 64
+	and #63            ; <= 66
+	sta p0_x           ; <= 69
+
+
+	/***********************************
 	;; lda #$70 ;+2
 	lda #$00 ;+2
 	sta HMP0 ;+3
@@ -173,6 +261,7 @@ FrameLoop: SUBROUTINE
 	nop
 	sta RESP1 ; this puts P1 at pixel 62
 	; completes at clock44
+	****************************/
 	
 	; vblank 20
 	sta  WSYNC
@@ -388,7 +477,7 @@ LineLoop:
 	jmp Line4          ; B +3 76
 	ALIGN 256, $FF
 Line4:
-	;;;;;;;;;;;;;;;;;;;;;; line 4  (Draw P1, FAKE Plan P0)
+	;;;;;;;;;;;;;;;;;;;;;; line 4  (Draw P1, Plan P0)
 	SUBROUTINE
 	sta HMOVE          ; +3  3
 	ldx p1_pix         ; +3  6
@@ -409,19 +498,19 @@ Line4:
 	nop                ; +2  32 XXXXXX
 	lda ground_col     ; +3  35
 	sta COLUPF         ; +3  38
-	lda scanline       ; +3  41 FAKE check opponent position...
-	cmp #28            ; +2  43 ...
-	bne .p0_nomatch    ; +2/+3 45
-	lda #18            ; +2  47   FAKE choose different sprite
-	sta p0_pix         ; +3  50
-	jmp .p0_done       ; +3  53
-.p0_nomatch:           ; 46
-	lda scanline       ; +3  49 XXXXXX
-	nop                ; +2  51 XXXXXX
-	nop                ; +2  53 XXXXXX
+	lda scanline       ; +3  41
+	cmp opp_line       ; +3  44 ...
+	bne .p0_nomatch    ; A +2 46 /B +3 47
+	lda opp_pix        ; A +3 49
+	sta p0_pix         ; A +3 52
+	jmp .p0_done       ; A +3 55
+.p0_nomatch:           ; B 47
+	nop                ; B +2 49 XXXXXX
+	nop                ; B +2 51 XXXXXX
+	nop                ; B +2 53 XXXXXX
+	nop                ; B +2 55 XXXXXX
 .p0_done:
-	lda scanline       ; +3  56 XXXXXX
-	nop                ; +2  58 XXXXXX
+	lda scanline       ; +3  58 XXXXXX
 	nop                ; +2  60 XXXXXX
 	lda road_col       ; +3  63
 	sta COLUPF         ; +3  66
