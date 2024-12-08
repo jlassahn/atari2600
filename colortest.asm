@@ -82,7 +82,7 @@ FrameLoop:
 .even_frame:
 	lda #$02
 	sta COLUBK
-	lda #$08
+	lda #$D2
 	sta COLUPF
 	lda #$00
 	sta PF1

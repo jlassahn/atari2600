@@ -84,7 +84,7 @@ FrameLoop:
 	sta PF2
 	lda #$02
 	sta COLUBK
-	lda #$08
+	lda #$D2
 	sta COLUPF
 	dey
 	bne .line_loop
