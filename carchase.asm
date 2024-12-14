@@ -15,17 +15,13 @@
 	ldx p0_pix         ; +3  3
 	lda SpritePix,X    ; +4  7
 	sta GRP0           ; +3  10
-	beq .skip_p0       ; A +2 12 / B +3 13
-	lda SpriteCol,X    ; A +4 16
-	sta COLUP0         ; A +3 19
+	lda SpriteCol,X    ; +4  14
+	sta COLUP0         ; +3  17
+	beq .skip_p0       ; A +2 19 / B +3 20
 	inc p0_pix         ; A +5 24
 	jmp .p0_done       ; A +3 27
-.skip_p0               ; B +3 13
-	nop                ; B +2 15 XXXXXX
-	nop                ; B +2 17 XXXXXX
-	nop                ; B +2 19 XXXXXX
-	nop                ; B +2 21 XXXXXX
-	nop                ; B +2 23 XXXXXX
+.skip_p0               ; B +3 20
+	lda 0              ; B +3 23 XXXXXX
 	nop                ; B +2 25 XXXXXX
 	nop                ; B +2 27 XXXXXX
 .p0_done:
