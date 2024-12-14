@@ -17,7 +17,7 @@ p0_pix: BYTE -1
 p1_pix: BYTE -1
 p0_x: BYTE -1
 p1_x: BYTE -1
-
+vol: BYTE -1
 opp_line: BYTE -1
 opp_pix: BYTE -1
 player_seg: BYTE -1
@@ -44,49 +44,42 @@ Init: SUBROUTINE
 	sta 0,X
 	dex
 	bne .clear
-	lda #255
-	sta PF1
-	lda #$A5
-	sta GRP0
-	sta GRP1
-	lda #0
-	sta HMP0
-	sta HMP1
-	lda #$FF
-	sta COLUP0
-	sta COLUP1
-	sta COLUPF
 
-	lda #0
+	lda #$02
 	sta COLUBK
 	sta road_col
 	lda #$D2
 	sta ground_col
-	lda Road0
-	sta PF2
-	lda Road1
-	sta PF0
-	lda Road2
-	sta PF1
+
 	lda #0
 	sta road_lo
 	sta road_hi
 
+	; set up player graphics
+	; index 1 through go from bottom to top of the screen.
+	; index 0 wraps around to the very top and should always contain
+	; zeros.
+
+	; player car image gets initialized here.
+	lda #9
+	sta player_pix+4 ; player
+	lda #1
+	sta player_pix+5 ; player
+
+	; FAKE smoke screen and bullet images
 	lda #69
 	sta player_pix+1 ; smoke
 	sta player_pix+2 ; smoke
 	lda #60
 	sta player_pix+3 ; smoke
-	lda #9
-	sta player_pix+4 ; player
-	lda #1
-	sta player_pix+5 ; player
 	lda #48
 	sta player_pix+6 ; bullet
 	lda #54
 	sta player_pix+7 ; bullet
 	sta player_pix+8 ; bullet
 
+	; The move and size values for smoke are always the same so initialize
+	; them here.
 	lda #$07
 	sta player_move+1 ; smoke
 	lda #$67
@@ -94,6 +87,7 @@ Init: SUBROUTINE
 	lda #$77
 	sta player_move+3 ; smoke
 
+	; FAKE initial values for player and opponent positions
 	lda #12
 	sta opp_line
 	lda #18
@@ -102,6 +96,28 @@ Init: SUBROUTINE
 	sta p0_x
 	sta p1_x
 
+	; Frequency tables at:
+	; https://7800.8bitdev.org/index.php/Atari_2600_VCS_Sound_Frequency_and_Waveform_Guide
+	; lda #1 ; buzzy, but good note (div 15)
+	; lda #2 ; beating buzz, at low frequency migth be a good gravel sound
+	; lda #3 ; noisy but somwhat pitched, buzzy discordant note.
+	; lda #4 ; pure tone high (div 2)  C5
+	; lda #5 ; same as #4
+	; lda #6 ; pure tone very low (div 31)
+	; lda #7 ; buzzy tone, rougher than #1?
+	; lda #8 ; noise, some pitch and buzz at higher frequencies
+	; lda #9 ;  buzzy tone, similar to 7
+	; lda #10 ; pure tone  same as #6
+	; lda #11 ; no sound
+	; lda #12 ; pure tone (div 6)   F3
+	; lda #13 ; same as #12
+	; lda #14 ; very low pitch (div 93)
+	; lda #15 ; buzzy tone low
+	; sta AUDC0
+	; lda #2
+	; sta AUDV0
+	; lda #23; A #19; C  #16; Eb #29;  F
+	; sta AUDF0
 
 FrameLoop: SUBROUTINE
 	; vblank 1
@@ -115,12 +131,10 @@ FrameLoop: SUBROUTINE
 	lda SWCHA
 	rol
 	bcs .no_right
-	inc p1_x
-	inc p1_x
+	inc p1_x  ; 1 pixel per frame sideways is a good max turn rate
 .no_right:
 	rol
 	bcs .no_left
-	dec p1_x
 	dec p1_x
 .no_left:
 	rol
@@ -136,6 +150,18 @@ FrameLoop: SUBROUTINE
 
 	; vblank 2
 	sta  WSYNC
+
+	; FAKE audio processing
+	lda vol
+	clc
+	adc #-8
+	and #127
+	sta vol
+	lsr
+	lsr
+	lsr
+	lsr
+	; sta AUDV0
 
 	; vblank 3
 	sta  WSYNC
@@ -186,15 +212,16 @@ FrameLoop: SUBROUTINE
 	; vblank 17
 	sta  WSYNC
 
+	; Lines 18 and 19 strobe RESPx for player and opponent X positions...
 	; some ideas here borrowed from
 	; https://bumbershootsoft.wordpress.com/2018/08/30/an-arbitrary-sprite-positioning-routine-for-the-atari-2600/
 	; x == 0 --> strobe at clock 37 --> left edge at pixel 48
 
-	; vblank 18
+	; vblank 18  (strobe P1 which is opponent)
 	sta  WSYNC
-	lda p1_x           ; +3  7
-	clc                ; +2  2
-	adc #6             ; +2  4  Offset to zero out position
+	lda p1_x           ; +3  3
+	clc                ; +2  5
+	adc #6             ; +2  7  Offset to zero out position
 	sec                ; +2  9
 	nop                ; +2  11 XXXXXX
 	nop                ; +2  13 XXXXXX
@@ -211,11 +238,11 @@ p1_strobe_loop:
 	sta HMP1           ; +3  34 + N*5
 	sta RESP1          ; +3  37 + N*5 <= 57
 
-	; vblank 19
+	; vblank 19  (strobe P0 which is player)
 	sta  WSYNC
-	lda p0_x           ; +3  7
-	clc                ; +2  2
-	adc #6             ; +2  4  Offset to zero out position
+	lda p0_x           ; +3  3
+	clc                ; +2  5
+	adc #6             ; +2  7  Offset to zero out position
 	sec                ; +2  9
 	nop                ; +2  11 XXXXXX
 	nop                ; +2  13 XXXXXX
@@ -239,43 +266,22 @@ p0_strobe_loop:
 	and #63            ; <= 66
 	sta p0_x           ; <= 69
 
-
-	/***********************************
-	;; lda #$70 ;+2
-	lda #$00 ;+2
-	sta HMP0 ;+3
-	sta HMP1 ;+3
-	lda 0 ;+3
-	lda 0 ;+3
-	lda 0 ;+3
-	lda 0 ;+3
-	lda 0 ;+3
-	lda 0 ;+3
-	lda 0 ;+3
-	lda 0 ;+3
-	nop   ;+2
-	nop   ;+2
-	; clock 36
-	sta RESP0 ; this puts P0 at pixel 47 (one pixel left of active region)
-	; completes at clock39
-	nop
-	sta RESP1 ; this puts P1 at pixel 62
-	; completes at clock44
-	****************************/
-	
 	; vblank 20
 	sta  WSYNC
-	sta HMOVE
-	lda 0 ;+3
-	lda 0 ;+3
-	lda 0 ;+3
-	lda 0 ;+3
-	lda 0 ;+3
-	lda 0 ;+3
-	lda 0 ;+3
-	lda #0
-	sta HMP0
-	sta HMP1
+	sta HMOVE          ; +3  3
+	nop                ; +2  5  XXXXXX
+	nop                ; +2  7  XXXXXX
+	nop                ; +2  9  XXXXXX
+	nop                ; +2  11 XXXXXX
+	nop                ; +2  13 XXXXXX
+	nop                ; +2  15 XXXXXX
+	nop                ; +2  17 XXXXXX
+	nop                ; +2  19 XXXXXX
+	nop                ; +2  21 XXXXXX
+	lda 0              ; +3  24 XXXXXX
+	lda #0             ; +2  28
+	sta HMP0           ; +3  31
+	sta HMP1           ; +3  34
 
 	sta WSYNC
 	; start of active frame (line 21)
@@ -285,16 +291,16 @@ p0_strobe_loop:
 	sty scanline       ; +3  10
 	lda road_hi        ; +3  13
 	sta road_seg       ; +3  16
-	lda road_lo        ; +3  19
-	rol                ; +2  21
-	rol                ; +2  23
-	rol                ; +2  25
-	and #3             ; +2  27
-	eor #3             ; +2  29
+	lda road_lo        ; +3  19  Extract high two bits of road_lo
+	rol                ; +2  21  ...
+	rol                ; +2  23  ...
+	rol                ; +2  25  ...
+	and #3             ; +2  27  ...
+	eor #3             ; +2  29  and negate
 	sta road_cnt       ; +3  32
 	clc                ; +2  34
 	lda road_lo        ; +3  37
-	adc #$F0           ; +2  39
+	adc #$D0           ; +2  39 Speed $FFFC is very slow $FFD0 is pretty fast
 	sta road_lo        ; +3  42
 	lda road_hi        ; +3  45
 	adc #$FF           ; +2  47
@@ -597,26 +603,26 @@ Line4:
 	ldx p0_pix         ; +3  6
 	lda SpritePix,X    ; +4 10
 	sta GRP0           ; +3  13
-	beq .skip_p0       ; +2/+3 15
-	lda SpriteCol,X    ; +4 19
-	sta COLUP0         ; +3 22
-	inc p0_pix         ; +5 27
-	jmp .p0_done       ; +3 30
-.skip_p0               ; 16
-	lda scanline       ; +3  19 XXXXXX
-	lda scanline       ; +3  22 XXXXXX
-	lda scanline       ; +3  25 XXXXXX
-	lda scanline       ; +3  28 XXXXXX
-	nop                ; +2  30 XXXXXX
+	beq .skip_p0       ; A +2 15 / B +3 16
+	lda SpriteCol,X    ; A +4 19
+	sta COLUP0         ; A +3 22
+	inc p0_pix         ; A +5 27
+	jmp .p0_done       ; A +3 30
+.skip_p0               ; B 16
+	lda scanline       ; B +3  19 XXXXXX
+	lda scanline       ; B +3  22 XXXXXX
+	lda scanline       ; B +3  25 XXXXXX
+	lda scanline       ; B +3  28 XXXXXX
+	nop                ; B +2  30 XXXXXX
 .p0_done:
 	nop                ; +2  32 XXXXXX
 	lda ground_col     ; +3  35
 	sta COLUPF         ; +3  38 Start of active playfield
 	dec road_cnt       ; +5  43 Road state update...
-	bpl .no_road_update ; +2 45 ...
-	lda #3             ; +2 47 ...
-	sta road_cnt       ; +3 50 ...
-	inc road_seg       ; +5 55 ...
+	bpl .no_road_update ;A +2 45 / B +3 46  ...
+	lda #3             ; A +2 47 ...
+	sta road_cnt       ; A +3 50 ...
+	inc road_seg       ; A +5 55 ...
 .road_update_end:
 	lda road_col       ; +3  58
 	dec scanline       ; +5  63
@@ -628,11 +634,11 @@ LineLoopEnd:
 	sta WSYNC
 	jmp FrameLoop
 
-.no_road_update:         ;     46
-	nop                  ; +2  48 XXXXXX
-	nop                  ; +2  50 XXXXXX
-	nop                  ; +2  52 XXXXXX
-	jmp .road_update_end ; +3  55
+.no_road_update:         ; B    46
+	nop                  ; B +2 48 XXXXXX
+	nop                  ; B +2 50 XXXXXX
+	nop                  ; B +2 52 XXXXXX
+	jmp .road_update_end ; B +3 55
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	; Data Tables
