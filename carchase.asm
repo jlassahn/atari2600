@@ -48,6 +48,8 @@ opp_pix: BYTE -1
 player_seg: BYTE -1
 player_move: ds.b 15
 player_pix: ds.b 15
+player_speed: BYTE -1
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -113,13 +115,16 @@ Init: SUBROUTINE
 	sta player_move+3 ; smoke
 
 	; FAKE initial values for player and opponent positions
-	lda #12
+	lda #15   ; 1 through 30 are usable values here
 	sta opp_line
 	lda #PixCar1
 	sta opp_pix
 	lda #0
 	sta p0_x
 	sta p1_x
+	; lda #4  ; very slow
+	lda #50  ; very fast
+	sta player_speed
 
 	; Frequency tables at:
 	; https://7800.8bitdev.org/index.php/Atari_2600_VCS_Sound_Frequency_and_Waveform_Guide
@@ -323,17 +328,17 @@ p0_strobe_loop:
 	and #3             ; +2  27  ...
 	eor #3             ; +2  29  and negate
 	sta road_cnt       ; +3  32
-	clc                ; +2  34
+	sec                ; +2  34
 	lda road_lo        ; +3  37
-	adc #$D0           ; +2  39 Speed $FFFC is very slow $FFD0 is pretty fast
-	sta road_lo        ; +3  42
-	lda road_hi        ; +3  45
-	adc #$FF           ; +2  47
-	sta road_hi        ; +3  50
-	lda #0             ; +2  52
-	sta p0_pix         ; +3  55
-	sta p1_pix         ; +3  58
-	jmp LineLoop
+	sbc player_speed   ; +3  40
+	sta road_lo        ; +3  43
+	lda road_hi        ; +3  46
+	sbc #0             ; +2  48
+	sta road_hi        ; +3  51
+	lda #0             ; +2  53
+	sta p0_pix         ; +3  56
+	sta p1_pix         ; +3  59
+	jmp LineLoop       ; +3  62
 
 ; The main display code is a loop that runs in batches of eight scanlines
 ; These are divided into two groups of four, with each group aligned to
