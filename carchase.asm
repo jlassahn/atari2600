@@ -2,6 +2,46 @@
 	processor 6502
 	include vcs.h
 
+	MACRO DrawP1       ; +27 TOTAL
+	ldx p1_pix         ; +3  3
+	lda SpritePix,X    ; +4  7
+	sta GRP1           ; +3  10
+	beq .skip_p1       ; A +2 12 / B +3 13
+	lda SpriteCol,X    ; A +4 16
+	sta COLUP1         ; A +3 19
+	inc p1_pix         ; A +5 24
+	jmp .p1_done       ; A +3 27
+.skip_p1               ; B    13
+	nop                ; B +2 15 XXXXXX
+	nop                ; B +2 17 XXXXXX
+	nop                ; B +2 19 XXXXXX
+	nop                ; B +2 21 XXXXXX
+	nop                ; B +2 23 XXXXXX
+	nop                ; B +2 25 XXXXXX
+	nop                ; B +2 27 XXXXXX
+.p1_done:
+	ENDM
+
+	MACRO DrawP0       ; +27 TOTAL
+	ldx p0_pix         ; +3  3
+	lda SpritePix,X    ; +4  7
+	sta GRP0           ; +3  10
+	beq .skip_p0       ; A +2 12 / B +3 13
+	lda SpriteCol,X    ; A +4 16
+	sta COLUP0         ; A +3 19
+	inc p0_pix         ; A +5 24
+	jmp .p0_done       ; A +3 27
+.skip_p0               ; B +3 13
+	nop                ; B +2 15 XXXXXX
+	nop                ; B +2 17 XXXXXX
+	nop                ; B +2 19 XXXXXX
+	nop                ; B +2 21 XXXXXX
+	nop                ; B +2 23 XXXXXX
+	nop                ; B +2 25 XXXXXX
+	nop                ; B +2 27 XXXXXX
+.p0_done:
+	ENDM
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	SEG.U RAM
 	org $80
@@ -323,23 +363,7 @@ LineLoop:
 	;;;;;;;;;;;;;;;;;;;;;; line 0  (Draw P1, Write Playfield)
 	SUBROUTINE
 	sta HMOVE          ; +3  3
-	ldx p1_pix         ; +3  6
-	lda SpritePix,X    ; +4 10
-	sta GRP1           ; +3  13
-	beq .skip_p1       ; A +2 15 / B +3
-	lda SpriteCol,X    ; A +4 19
-	sta COLUP1         ; A +3 22
-	inc p1_pix         ; A +5 27
-	jmp .p1_done       ; A +3 30
-.skip_p1               ; B +3  16
-	nop                ; B +2  18 XXXXXX
-	nop                ; B +2  20 XXXXXX
-	nop                ; B +2  22 XXXXXX
-	nop                ; B +2  24 XXXXXX
-	nop                ; B +2  26 XXXXXX
-	nop                ; B +2  28 XXXXXX
-	nop                ; B +2  30 XXXXXX
-.p1_done:
+	DrawP1             ; +27 30
 	nop                ; +2  32 XXXXXX
 	lda ground_col     ; +3  35
 	sta COLUPF         ; +3  38 Start of active playfield
@@ -360,23 +384,7 @@ LineLoop:
 	;;;;;;;;;;;;;;;;;;;;;; line 1  (Draw P0, NOOP)
 	SUBROUTINE
 	sta HMOVE          ; +3  3
-	ldx p0_pix         ; +3  6
-	lda SpritePix,X    ; +4  10
-	sta GRP0           ; +3  13
-	beq .skip_p0       ; A +2 15 / B +3
-	lda SpriteCol,X    ; A +4 19
-	sta COLUP0         ; A +3 22
-	inc p0_pix         ; A +5 27
-	jmp .p0_done       ; A +3 30
-.skip_p0               ; B +3 16
-	nop                ; B +2 18 XXXXXX
-	nop                ; B +2 20 XXXXXX
-	nop                ; B +2 22 XXXXXX
-	nop                ; B +2 24 XXXXXX
-	nop                ; B +2 26 XXXXXX
-	nop                ; B +2 28 XXXXXX
-	nop                ; B +2 30 XXXXXX
-.p0_done:
+	DrawP0             ; +27 30
 	nop                ; +2  32 XXXXXX
 	lda ground_col     ; +3  35
 	sta COLUPF         ; +3  38
@@ -402,21 +410,7 @@ LineLoop:
 	;;;;;;;;;;;;;;;;;;;;;; line 2  (Draw P1, NOOP)
 	SUBROUTINE
 	sta HMOVE          ; +3  3
-	ldx p1_pix         ; +3  6
-	lda SpritePix,X    ; +4 10
-	sta GRP1           ; +3  13
-	beq .skip_p1       ; +2/+3 15
-	lda SpriteCol,X    ; +4 19
-	sta COLUP1         ; +3 22
-	inc p1_pix         ; +5 27
-	jmp .p1_done       ; +3 30
-.skip_p1               ; 16
-	lda scanline       ; +3  19 XXXXXX
-	lda scanline       ; +3  22 XXXXXX
-	lda scanline       ; +3  25 XXXXXX
-	lda scanline       ; +3  28 XXXXXX
-	nop                ; +2  30 XXXXXX
-.p1_done:
+	DrawP1             ; +27 30
 	nop                ; +2  32 XXXXXX
 	lda ground_col     ; +3  35
 	sta COLUPF         ; +3  38
@@ -438,21 +432,7 @@ LineLoop:
 	;;;;;;;;;;;;;;;;;;;;;; line 3  (Draw P0, Plan Player)
 	SUBROUTINE
 	sta HMOVE          ; +3  3
-	ldx p0_pix         ; +3  6
-	lda SpritePix,X    ; +4 10
-	sta GRP0           ; +3  13
-	beq .skip_p0       ; +2/+3 15
-	lda SpriteCol,X    ; +4 19
-	sta COLUP0         ; +3 22
-	inc p0_pix         ; +5 27
-	jmp .p0_done       ; +3 30
-.skip_p0               ; 16
-	lda scanline       ; +3  19 XXXXXX
-	lda scanline       ; +3  22 XXXXXX
-	lda scanline       ; +3  25 XXXXXX
-	lda scanline       ; +3  28 XXXXXX
-	nop                ; +2  30 XXXXXX
-.p0_done:
+	DrawP0             ; +27 30
 	lda #1             ; +2  32
 	ldx ground_col     ; +3  35
 	stx COLUPF         ; +3  38
@@ -486,21 +466,7 @@ Line4:
 	;;;;;;;;;;;;;;;;;;;;;; line 4  (Draw P1, Plan P0)
 	SUBROUTINE
 	sta HMOVE          ; +3  3
-	ldx p1_pix         ; +3  6
-	lda SpritePix,X    ; +4 10
-	sta GRP1           ; +3  13
-	beq .skip_p1       ; +2/+3 15
-	lda SpriteCol,X    ; +4 19
-	sta COLUP1         ; +3 22
-	inc p1_pix         ; +5 27
-	jmp .p1_done       ; +3 30
-.skip_p1               ; 16
-	lda scanline       ; +3  19 XXXXXX
-	lda scanline       ; +3  22 XXXXXX
-	lda scanline       ; +3  25 XXXXXX
-	lda scanline       ; +3  28 XXXXXX
-	nop                ; +2  30 XXXXXX
-.p1_done:
+	DrawP1             ; +27 30
 	nop                ; +2  32 XXXXXX
 	lda ground_col     ; +3  35
 	sta COLUPF         ; +3  38
@@ -528,21 +494,7 @@ Line4:
 	;;;;;;;;;;;;;;;;;;;;;; line 5  (Draw P0, NOOP)
 	SUBROUTINE
 	sta HMOVE          ; +3  3
-	ldx p0_pix         ; +3  6
-	lda SpritePix,X    ; +4 10
-	sta GRP0           ; +3  13
-	beq .skip_p0       ; +2/+3 15
-	lda SpriteCol,X    ; +4 19
-	sta COLUP0         ; +3 22
-	inc p0_pix         ; +5 27
-	jmp .p0_done       ; +3 30
-.skip_p0               ; 16
-	lda scanline       ; +3  19 XXXXXX
-	lda scanline       ; +3  22 XXXXXX
-	lda scanline       ; +3  25 XXXXXX
-	lda scanline       ; +3  28 XXXXXX
-	nop                ; +2  30 XXXXXX
-.p0_done:
+	DrawP0             ; +27 30
 	nop                ; +2  32 XXXXXX
 	lda ground_col     ; +3  35
 	sta COLUPF         ; +3  38
@@ -564,21 +516,7 @@ Line4:
 	;;;;;;;;;;;;;;;;;;;;;; line 6  (Draw P1, NOOP)
 	SUBROUTINE
 	sta HMOVE          ; +3  3
-	ldx p1_pix         ; +3  6
-	lda SpritePix,X    ; +4 10
-	sta GRP1           ; +3  13
-	beq .skip_p1       ; +2/+3 15
-	lda SpriteCol,X    ; +4 19
-	sta COLUP1         ; +3 22
-	inc p1_pix         ; +5 27
-	jmp .p1_done       ; +3 30
-.skip_p1               ; 16
-	lda scanline       ; +3  19 XXXXXX
-	lda scanline       ; +3  22 XXXXXX
-	lda scanline       ; +3  25 XXXXXX
-	lda scanline       ; +3  28 XXXXXX
-	nop                ; +2  30 XXXXXX
-.p1_done:
+	DrawP1             ; +27 30
 	nop                ; +2  32 XXXXXX
 	lda ground_col     ; +3  35
 	sta COLUPF         ; +3  38
@@ -600,21 +538,7 @@ Line4:
 	;;;;;;;;;;;;;;;;;;;;;; line 7  (Draw P0, Road state update)
 	SUBROUTINE
 	sta HMOVE          ; +3  3
-	ldx p0_pix         ; +3  6
-	lda SpritePix,X    ; +4 10
-	sta GRP0           ; +3  13
-	beq .skip_p0       ; A +2 15 / B +3 16
-	lda SpriteCol,X    ; A +4 19
-	sta COLUP0         ; A +3 22
-	inc p0_pix         ; A +5 27
-	jmp .p0_done       ; A +3 30
-.skip_p0               ; B 16
-	lda scanline       ; B +3  19 XXXXXX
-	lda scanline       ; B +3  22 XXXXXX
-	lda scanline       ; B +3  25 XXXXXX
-	lda scanline       ; B +3  28 XXXXXX
-	nop                ; B +2  30 XXXXXX
-.p0_done:
+	DrawP0             ; +27 30
 	nop                ; +2  32 XXXXXX
 	lda ground_col     ; +3  35
 	sta COLUPF         ; +3  38 Start of active playfield
