@@ -2,24 +2,13 @@
 	processor 6502
 	include vcs.h
 
-	MACRO DrawP1       ; +27 TOTAL
+	MACRO DrawP1       ; +22 TOTAL
 	ldx p1_pix         ; +3  3
 	lda SpritePix,X    ; +4  7
 	sta GRP1           ; +3  10
-	beq .skip_p1       ; A +2 12 / B +3 13
-	lda SpriteCol,X    ; A +4 16
-	sta COLUP1         ; A +3 19
-	inc p1_pix         ; A +5 24
-	jmp .p1_done       ; A +3 27
-.skip_p1               ; B    13
-	nop                ; B +2 15 XXXXXX
-	nop                ; B +2 17 XXXXXX
-	nop                ; B +2 19 XXXXXX
-	nop                ; B +2 21 XXXXXX
-	nop                ; B +2 23 XXXXXX
-	nop                ; B +2 25 XXXXXX
-	nop                ; B +2 27 XXXXXX
-.p1_done:
+	lda SpriteCol,X    ; +4  14
+	sta COLUP1         ; +3  17
+	inc p1_pix         ; +5  22
 	ENDM
 
 	MACRO DrawP0       ; +27 TOTAL
@@ -101,20 +90,20 @@ Init: SUBROUTINE
 	; zeros.
 
 	; player car image gets initialized here.
-	lda #9
+	lda #PixPlayerLo
 	sta player_pix+4 ; player
-	lda #1
+	lda #PixPlayerHi
 	sta player_pix+5 ; player
 
 	; FAKE smoke screen and bullet images
-	lda #69
+	lda #PixSmoke2
 	sta player_pix+1 ; smoke
 	sta player_pix+2 ; smoke
-	lda #60
+	lda #PixSmoke1
 	sta player_pix+3 ; smoke
-	lda #48
+	lda #PixBullet1
 	sta player_pix+6 ; bullet
-	lda #54
+	lda #PixBullet2
 	sta player_pix+7 ; bullet
 	sta player_pix+8 ; bullet
 
@@ -130,7 +119,7 @@ Init: SUBROUTINE
 	; FAKE initial values for player and opponent positions
 	lda #12
 	sta opp_line
-	lda #18
+	lda #PixCar1
 	sta opp_pix
 	lda #0
 	sta p0_x
@@ -363,7 +352,9 @@ LineLoop:
 	;;;;;;;;;;;;;;;;;;;;;; line 0  (Draw P1, Write Playfield)
 	SUBROUTINE
 	sta HMOVE          ; +3  3
-	DrawP1             ; +27 30
+	DrawP1             ; +22 25
+	lda 0              ; +3  28 XXXXXX
+	nop                ; +2  30 XXXXXX
 	nop                ; +2  32 XXXXXX
 	lda ground_col     ; +3  35
 	sta COLUPF         ; +3  38 Start of active playfield
@@ -410,7 +401,9 @@ LineLoop:
 	;;;;;;;;;;;;;;;;;;;;;; line 2  (Draw P1, NOOP)
 	SUBROUTINE
 	sta HMOVE          ; +3  3
-	DrawP1             ; +27 30
+	DrawP1             ; +22 25
+	lda 0              ; +3  28 XXXXXX
+	nop                ; +2  30 XXXXXX
 	nop                ; +2  32 XXXXXX
 	lda ground_col     ; +3  35
 	sta COLUPF         ; +3  38
@@ -466,7 +459,9 @@ Line4:
 	;;;;;;;;;;;;;;;;;;;;;; line 4  (Draw P1, Plan P0)
 	SUBROUTINE
 	sta HMOVE          ; +3  3
-	DrawP1             ; +27 30
+	DrawP1             ; +22 25
+	lda 0              ; +3  28 XXXXXX
+	nop                ; +2  30 XXXXXX
 	nop                ; +2  32 XXXXXX
 	lda ground_col     ; +3  35
 	sta COLUPF         ; +3  38
@@ -516,7 +511,9 @@ Line4:
 	;;;;;;;;;;;;;;;;;;;;;; line 6  (Draw P1, NOOP)
 	SUBROUTINE
 	sta HMOVE          ; +3  3
-	DrawP1             ; +27 30
+	DrawP1             ; +22 25
+	lda 0              ; +3  28 XXXXXX
+	nop                ; +2  30 XXXXXX
 	nop                ; +2  32 XXXXXX
 	lda ground_col     ; +3  35
 	sta COLUPF         ; +3  38
